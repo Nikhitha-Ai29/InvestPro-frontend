@@ -1,0 +1,52 @@
+.sip-calculator h1 {
+  font-size: 32px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.calculator-container {
+  max-width: 600px;
+}
+
+.calculator-form {
+  padding: 32px;
+}
+
+.results-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px;
+  border-radius: 12px;
+  margin-top: 24px;
+  color: white;
+}
+
+.results-section h3 {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-item.highlight {
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.result-value {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.result-value.maturity {
+  font-size: 24px;
+}
