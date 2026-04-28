@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import ChatSupport from '../components/ChatSupport';
+import { clearSession } from '../services/authService';
 import '../styles/Layout.css';
 
 function DashboardLayout({ children, setUser }) {
@@ -8,10 +9,7 @@ function DashboardLayout({ children, setUser }) {
   const userName = stored.name || localStorage.getItem('userName') || 'User';
 
   const handleLogout = () => {
-    localStorage.removeItem('investproUser');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('role');
+    clearSession();
     if (setUser) setUser(null);
     navigate('/home');
   };

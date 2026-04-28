@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import '../styles/Profile.css';
 
-const API = 'http://localhost:8081';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 function Profile({ user }) {
   const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
