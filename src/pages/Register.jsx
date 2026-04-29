@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/Auth.css';
 
-const API_URL = 'http://localhost:8081/auth';
+const API_URL = "https://investpro-backend-3.onrender.com/auth";
 
 function Register({ setUser }) {
   const navigate = useNavigate();
