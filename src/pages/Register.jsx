@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { registerUser, sendOtp } from '../services/authService';
+import axios from 'axios';
 import '../styles/Auth.css';
+
+const API_URL = 'http://localhost:8081/auth';
 
 function Register({ setUser }) {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -12,11 +15,13 @@ function Register({ setUser }) {
     confirmPassword: '',
     role: 'USER',
   });
-  const [error,   setError]   = useState('');
+
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (field, value) =>
+  const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,34 +31,43 @@ function Register({ setUser }) {
       setError('Passwords do not match!');
       return;
     }
+
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters!');
       return;
     }
 
     setLoading(true);
+
     try {
-      // Step 1 — register the user
-      const data = await registerUser(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.role
-      );
+      const registerResponse = await axios.post(`${API_URL}/register`, {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
 
-      // Step 2 — send OTP to email (best-effort; backend may send it automatically)
-      try { await sendOtp(formData.email); } catch (_) { /* ignore if auto-sent */ }
+      try {
+        await axios.post(`${API_URL}/send-otp`, {
+          email: formData.email,
+        });
+      } catch (otpError) {
+        console.log('OTP may already be sent by backend');
+      }
 
-      // Step 3 — go to OTP page, pass email + pending user data via route state
       navigate('/verify-otp', {
         state: {
           email: formData.email,
-          pendingUser: data,
+          pendingUser: registerResponse.data,
         },
       });
-
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        'Registration failed. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -114,6 +128,7 @@ function Register({ setUser }) {
 
           <div className="form-group">
             <label>Select Role</label>
+
             <div className="role-selection">
               <label className="radio-label">
                 <input
@@ -125,6 +140,7 @@ function Register({ setUser }) {
                 />
                 <span>User</span>
               </label>
+
               <label className="radio-label">
                 <input
                   type="radio"

@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 import '../styles/Dashboard.css';
+
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 const portfolioData = [
   { month: 'Jan', value: 50000 },
@@ -30,6 +33,54 @@ const COLORS = ['#667eea', '#10b981', '#f59e0b'];
 
 function Dashboard({ user, setUser }) {
   const displayName = user?.name || localStorage.getItem('userName') || 'User';
+  const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
+  const userId = stored.id;
+
+  const [investments, setInvestments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!userId) { setLoading(false); return; }
+    fetch(`${API}/investments/user/${userId}`)
+      .then(res => { if (!res.ok) throw new Error('Failed to load investments'); return res.json(); })
+      .then(data => setInvestments(Array.isArray(data) ? data : []))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  const totalInvested = investments.reduce((sum, item) => sum + (item.amount || item.investment || 0), 0);
+  const totalReturns = investments.reduce((sum, item) => sum + (item.returns || item.expectedReturns || 0), 0);
+  const currentValue = totalInvested + totalReturns;
+  const returnPercentage = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(1) : 0;
+
+  // Mock data for charts - in real app, this would come from backend
+  const portfolioData = [
+    { month: 'Jan', value: currentValue * 0.7 },
+    { month: 'Feb', value: currentValue * 0.75 },
+    { month: 'Mar', value: currentValue * 0.8 },
+    { month: 'Apr', value: currentValue * 0.85 },
+    { month: 'May', value: currentValue * 0.9 },
+    { month: 'Jun', value: currentValue }
+  ];
+
+  const assetData = [
+    { name: 'Equity', value: 45 },
+    { name: 'Debt', value: 30 },
+    { name: 'Hybrid', value: 25 }
+  ];
+
+  const monthlyInvestment = [
+    { month: 'Jan', amount: totalInvested * 0.15 },
+    { month: 'Feb', amount: totalInvested * 0.18 },
+    { month: 'Mar', amount: totalInvested * 0.16 },
+    { month: 'Apr', amount: totalInvested * 0.20 },
+    { month: 'May', amount: totalInvested * 0.17 },
+    { month: 'Jun', amount: totalInvested * 0.14 }
+  ];
+
+  if (loading) return <DashboardLayout user={user} setUser={setUser}><div className="dashboard-content"><p>Loading...</p></div></DashboardLayout>;
+  if (error) return <DashboardLayout user={user} setUser={setUser}><div className="dashboard-content"><p>Error: {error}</p></div></DashboardLayout>;
   return (
     <DashboardLayout user={user} setUser={setUser}>
       <div className="dashboard-content">
@@ -39,22 +90,22 @@ function Dashboard({ user, setUser }) {
         <div className="stats-grid">
           <div className="stat-card">
             <h3>Total Invested</h3>
-            <p className="stat-value">₹75,000</p>
+            <p className="stat-value">₹{totalInvested.toFixed(2)}</p>
             <span className="stat-label">Current Value</span>
           </div>
           <div className="stat-card">
             <h3>Current Value</h3>
-            <p className="stat-value">₹86,250</p>
+            <p className="stat-value">₹{currentValue.toFixed(2)}</p>
             <span className="stat-label">Portfolio Worth</span>
           </div>
           <div className="stat-card">
             <h3>Total Profit</h3>
-            <p className="stat-value profit">₹11,250</p>
+            <p className="stat-value profit">₹{totalReturns.toFixed(2)}</p>
             <span className="stat-label">Gains</span>
           </div>
           <div className="stat-card">
             <h3>Return %</h3>
-            <p className="stat-value profit">+15.0%</p>
+            <p className="stat-value profit">+{returnPercentage}%</p>
             <span className="stat-label">Overall Return</span>
           </div>
         </div>

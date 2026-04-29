@@ -4,6 +4,7 @@ import SplashScreen from './pages/SplashScreen';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyOTP from './pages/VerifyOTP';
 import Dashboard from './pages/Dashboard';
 import ExploreFunds from './pages/ExploreFunds';
 import InvestFund from './pages/InvestFund';
@@ -45,6 +46,7 @@ function App() {
         <Route path="/home" element={<LandingPage />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/register" element={<Register setUser={setUser} />} />
+        <Route path="/verify-otp" element={<VerifyOTP setUser={setUser} />} />
         
         {/* User Routes */}
         <Route path="/dashboard" element={<ProtectedRoute allowedRole="user"><Dashboard user={user} setUser={setUser} /></ProtectedRoute>} />
