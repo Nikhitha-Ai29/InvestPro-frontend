@@ -47,13 +47,9 @@ function Register({ setUser }) {
         role: formData.role,
       });
 
-      try {
-        await axios.post(`${API_URL}/send-otp`, {
-          email: formData.email,
-        });
-      } catch (otpError) {
-        console.log('OTP may already be sent by backend');
-      }
+      await axios.post(`${API_URL}/send-otp`, {
+        email: formData.email,
+      });
 
       navigate('/verify-otp', {
         state: {
@@ -66,7 +62,7 @@ function Register({ setUser }) {
         err.response?.data?.error ||
         err.response?.data?.message ||
         err.message ||
-        'Registration failed. Please try again.'
+        'Registration or OTP sending failed.'
       );
     } finally {
       setLoading(false);
