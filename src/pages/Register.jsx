@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { registerUser, sendOtp } from '../services/authService';
 import '../styles/Auth.css';
-
-const API_URL = "https://investpro-backend-3.onrender.com/auth";
 
 function Register({ setUser }) {
   const navigate = useNavigate();
@@ -41,21 +39,14 @@ function Register({ setUser }) {
 
     try {
       // ✅ Step 1: Register
-      const registerResponse = await axios.post(`${API_URL}/register`, {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-      });
+      const registerResponse = await registerUser(formData.name, formData.email, formData.password, formData.role);
 
-      console.log("✅ Register success:", registerResponse.data);
+      console.log("✅ Register success:", registerResponse);
 
       // ✅ Step 2: Send OTP
-      const otpResponse = await axios.post(`${API_URL}/send-otp`, {
-        email: formData.email,
-      });
+      const otpResponse = await sendOtp(formData.email);
 
-      console.log("🔥 OTP triggered:", otpResponse.data);
+      console.log("🔥 OTP triggered:", otpResponse);
 
       // ✅ Step 3: Navigate
       navigate('/verify-otp', {
@@ -68,12 +59,7 @@ function Register({ setUser }) {
     } catch (err) {
       console.error("❌ ERROR:", err);
 
-      setError(
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        'Registration or OTP sending failed.'
-      );
+      setError(err.message || 'Registration or OTP sending failed.');
     } finally {
       setLoading(false);
     }

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import '../styles/Profile.css';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+const API = "https://investpro-backend-3.onrender.com";
 
-function Profile({ user }) {
+function Profile({ user, setUser }) {
   const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
   const userId = stored.id || user?.id;
 
@@ -39,14 +39,14 @@ function Profile({ user }) {
   const roleLabel = (profile?.role || stored.role || '')?.toUpperCase() === 'ADMIN' ? 'Administrator' : 'Investor';
   const roleIcon = roleLabel === 'Administrator' ? '🛡️' : '👤';
 
-  if (loading) return <DashboardLayout><div className="page-loading">Loading profile...</div></DashboardLayout>;
-  if (error) return <DashboardLayout><div className="page-error">{error}</div></DashboardLayout>;
+  if (loading) return <DashboardLayout setUser={setUser}><div className="page-loading">Loading profile...</div></DashboardLayout>;
+  if (error) return <DashboardLayout setUser={setUser}><div className="page-error">{error}</div></DashboardLayout>;
 
   const displayName = profile?.name || stored.name || 'User';
   const displayEmail = profile?.email || stored.email || '';
 
   return (
-    <DashboardLayout>
+    <DashboardLayout setUser={setUser}>
       <div className="profile-page">
         <h1>My Profile</h1>
         <p className="page-subtitle">Manage your account information</p>

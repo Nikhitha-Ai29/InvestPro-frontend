@@ -1,34 +1,13 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
-import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
+import {
+  LineChart, Line, PieChart, Pie, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  Cell, ResponsiveContainer
+} from 'recharts';
 import '../styles/Dashboard.css';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
-
-const portfolioData = [
-  { month: 'Jan', value: 50000 },
-  { month: 'Feb', value: 55000 },
-  { month: 'Mar', value: 58000 },
-  { month: 'Apr', value: 62000 },
-  { month: 'May', value: 68000 },
-  { month: 'Jun', value: 75000 }
-];
-
-const assetData = [
-  { name: 'Equity', value: 45 },
-  { name: 'Debt', value: 30 },
-  { name: 'Hybrid', value: 25 }
-];
-
-const monthlyInvestment = [
-  { month: 'Jan', amount: 10000 },
-  { month: 'Feb', amount: 12000 },
-  { month: 'Mar', amount: 11000 },
-  { month: 'Apr', amount: 15000 },
-  { month: 'May', amount: 13000 },
-  { month: 'Jun', amount: 14000 }
-];
-
+const API = "https://investpro-backend-3.onrender.com";
 const COLORS = ['#667eea', '#10b981', '#f59e0b'];
 
 function Dashboard({ user, setUser }) {
@@ -41,20 +20,43 @@ function Dashboard({ user, setUser }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return; }
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     fetch(`${API}/investments/user/${userId}`)
-      .then(res => { if (!res.ok) throw new Error('Failed to load investments'); return res.json(); })
-      .then(data => setInvestments(Array.isArray(data) ? data : []))
-      .catch(err => setError(err.message))
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load investments');
+        return res.json();
+      })
+      .then(data => {
+        setInvestments(Array.isArray(data) ? data : []);
+        setError('');
+      })
+      .catch(err => {
+        console.error('❌ Dashboard fetch error:', err);
+        // Show empty state instead of error - user can still use app
+        setInvestments([]);
+        setError('Unable to load investments. Displaying sample data.');
+      })
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const totalInvested = investments.reduce((sum, item) => sum + (item.amount || item.investment || 0), 0);
-  const totalReturns = investments.reduce((sum, item) => sum + (item.returns || item.expectedReturns || 0), 0);
-  const currentValue = totalInvested + totalReturns;
-  const returnPercentage = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(1) : 0;
+  const totalInvested = investments.reduce(
+    (sum, item) => sum + (item.amount || item.investment || 0),
+    0
+  );
 
-  // Mock data for charts - in real app, this would come from backend
+  const totalReturns = investments.reduce(
+    (sum, item) => sum + (item.returns || item.expectedReturns || 0),
+    0
+  );
+
+  const currentValue = totalInvested + totalReturns;
+  const returnPercentage =
+    totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(1) : 0;
+
   const portfolioData = [
     { month: 'Jan', value: currentValue * 0.7 },
     { month: 'Feb', value: currentValue * 0.75 },
@@ -79,13 +81,23 @@ function Dashboard({ user, setUser }) {
     { month: 'Jun', amount: totalInvested * 0.14 }
   ];
 
-  if (loading) return <DashboardLayout user={user} setUser={setUser}><div className="dashboard-content"><p>Loading...</p></div></DashboardLayout>;
-  if (error) return <DashboardLayout user={user} setUser={setUser}><div className="dashboard-content"><p>Error: {error}</p></div></DashboardLayout>;
+  if (loading) {
+    return (
+      <DashboardLayout user={user} setUser={setUser}>
+        <div className="dashboard-content">
+          <p>Loading investments...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout user={user} setUser={setUser}>
       <div className="dashboard-content">
         <h1 className="welcome-title">Welcome back, {displayName}! 👋</h1>
         <p className="welcome-subtitle">Here's your investment overview</p>
+
+        {error && <div style={{ padding: '10px', backgroundColor: '#fff3cd', borderRadius: '4px', marginBottom: '15px', color: '#856404' }}>⚠️ {error}</div>}
 
         <div className="stats-grid">
           <div className="stat-card">
@@ -93,16 +105,19 @@ function Dashboard({ user, setUser }) {
             <p className="stat-value">₹{totalInvested.toFixed(2)}</p>
             <span className="stat-label">Current Value</span>
           </div>
+
           <div className="stat-card">
             <h3>Current Value</h3>
             <p className="stat-value">₹{currentValue.toFixed(2)}</p>
             <span className="stat-label">Portfolio Worth</span>
           </div>
+
           <div className="stat-card">
             <h3>Total Profit</h3>
             <p className="stat-value profit">₹{totalReturns.toFixed(2)}</p>
             <span className="stat-label">Gains</span>
           </div>
+
           <div className="stat-card">
             <h3>Return %</h3>
             <p className="stat-value profit">+{returnPercentage}%</p>
@@ -119,7 +134,12 @@ function Dashboard({ user, setUser }) {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="value" stroke="#667eea" strokeWidth={3} />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#667eea"
+                  strokeWidth={3}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -128,7 +148,14 @@ function Dashboard({ user, setUser }) {
             <h3>Asset Allocation</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={assetData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
+                <Pie
+                  data={assetData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  dataKey="value"
+                  label
+                >
                   {assetData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}

@@ -54,7 +54,7 @@ function App() {
         <Route path="/invest/:fundName" element={<ProtectedRoute allowedRole="user"><InvestFund /></ProtectedRoute>} />
         <Route path="/portfolio" element={<ProtectedRoute allowedRole="user"><Portfolio /></ProtectedRoute>} />
         <Route path="/sip-calculator" element={<ProtectedRoute allowedRole="user"><SIPCalculator /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute allowedRole="user"><Profile user={user} /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute allowedRole="user"><Profile user={user} setUser={setUser} /></ProtectedRoute>} />
         
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRole="admin"><AdminDashboard setUser={setUser} /></ProtectedRoute>} />
