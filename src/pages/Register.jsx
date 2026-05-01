@@ -40,6 +40,7 @@ function Register({ setUser }) {
     setLoading(true);
 
     try {
+      // ✅ Step 1: Register
       const registerResponse = await axios.post(`${API_URL}/register`, {
         name: formData.name,
         email: formData.email,
@@ -47,17 +48,26 @@ function Register({ setUser }) {
         role: formData.role,
       });
 
-      await axios.post(`${API_URL}/send-otp`, {
+      console.log("✅ Register success:", registerResponse.data);
+
+      // ✅ Step 2: Send OTP
+      const otpResponse = await axios.post(`${API_URL}/send-otp`, {
         email: formData.email,
       });
 
+      console.log("🔥 OTP triggered:", otpResponse.data);
+
+      // ✅ Step 3: Navigate
       navigate('/verify-otp', {
         state: {
           email: formData.email,
           pendingUser: registerResponse.data,
         },
       });
+
     } catch (err) {
+      console.error("❌ ERROR:", err);
+
       setError(
         err.response?.data?.error ||
         err.response?.data?.message ||
