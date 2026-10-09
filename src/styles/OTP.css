@@ -1,0 +1,122 @@
+/* Reuses .auth-page and .auth-card from Auth.css */
+
+.otp-icon {
+  font-size: 52px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.otp-email-hint {
+  text-align: center;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 28px;
+  word-break: break-all;
+}
+
+/* ── 6-box OTP input row ── */
+.otp-input-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.otp-box {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  outline: none;
+  color: #333;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: #667eea;
+}
+
+.otp-box:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+}
+
+.otp-box.filled {
+  border-color: #667eea;
+  background: #f0f3ff;
+}
+
+/* ── Success state ── */
+.otp-box.success {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+/* ── Timer & resend ── */
+.otp-resend-row {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #888;
+}
+
+.otp-timer {
+  font-weight: 700;
+  color: #667eea;
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.resend-btn:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* ── Success banner ── */
+.success-message {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #6ee7b7;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ── Step indicator ── */
+.otp-steps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e0e0e0;
+}
+
+.step-dot.active {
+  background: #667eea;
+  width: 28px;
+  border-radius: 5px;
+}
+
+.step-dot.done {
+  background: #10b981;
+}

@@ -29,7 +29,8 @@ const monthlyRevenue = [
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
 
 function AdminDashboard({ setUser }) {
-  const displayName = localStorage.getItem('userName') || 'Admin';
+  const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
+  const displayName = stored.name || localStorage.getItem('userName') || 'Admin';
   return (
     <AdminLayout setUser={setUser}>
       <div className="admin-content">

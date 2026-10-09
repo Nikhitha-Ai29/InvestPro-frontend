@@ -10,6 +10,7 @@ import InvestFund from './pages/InvestFund';
 import Portfolio from './pages/Portfolio';
 import SIPCalculator from './pages/SIPCalculator';
 import Profile from './pages/Profile';
+import VerifyOTP from './pages/VerifyOTP';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageFunds from './pages/admin/ManageFunds';
@@ -45,6 +46,7 @@ function App() {
         <Route path="/home" element={<LandingPage />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/register" element={<Register setUser={setUser} />} />
+        <Route path="/verify-otp" element={<VerifyOTP setUser={setUser} />} />
         
         {/* User Routes */}
         <Route path="/dashboard" element={<ProtectedRoute allowedRole="user"><Dashboard user={user} setUser={setUser} /></ProtectedRoute>} />

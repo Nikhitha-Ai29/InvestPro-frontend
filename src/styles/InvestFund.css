@@ -83,3 +83,24 @@
 .action-buttons .btn {
   flex: 1;
 }
+
+.invest-fund-header {
+  margin-bottom: 28px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+  display: inline-block;
+  transition: opacity 0.2s;
+}
+
+.back-btn:hover {
+  opacity: 0.75;
+}

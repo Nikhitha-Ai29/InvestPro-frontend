@@ -125,3 +125,37 @@ input:focus, select:focus {
   cursor: not-allowed;
   transform: none;
 }
+
+.demo-notice {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #1e40af;
+  font-size: 14px;
+}
+
+.demo-notice strong {
+  font-weight: 700;
+}
+
+.page-success {
+  text-align: center;
+  padding: 12px 20px;
+  font-size: 15px;
+  color: #065f46;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+
+.success-message {
+  background: #ecfdf5;
+  color: #065f46;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #a7f3d0;
+}

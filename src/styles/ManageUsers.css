@@ -66,3 +66,62 @@
 .btn-delete:hover {
   background: #dc2626;
 }
+
+.no-users-state {
+  text-align: center;
+  padding: 70px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.no-users-icon {
+  font-size: 52px;
+  margin-bottom: 16px;
+}
+
+.no-users-state h3 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.no-users-state p {
+  font-size: 14px;
+  color: #888;
+}
+
+.user-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.inv-count-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.role-badge.investor {
+  background: #dbeafe;
+  color: #1e40af;
+}

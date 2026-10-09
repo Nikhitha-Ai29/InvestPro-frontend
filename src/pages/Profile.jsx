@@ -1,55 +1,73 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
+import { isDemoSession } from '../services/authService';
 import '../styles/Profile.css';
 
-const API = 'http://localhost:8081';
+const API = import.meta.env.VITE_API_URL || 'https://investpro-backend.onrender.com';
 
 function Profile({ user }) {
   const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
   const userId = stored.id || user?.id;
+  const isDemo = isDemoSession();
 
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const fallbackProfile = {
+    name:             stored.name  || user?.name  || 'User',
+    email:            stored.email || user?.email || '',
+    role:             stored.role  || user?.role  || 'USER',
+    riskPreference:   'Medium',
+    investmentGoal:   'Wealth Creation',
+  };
+
+  const [profile, setProfile]   = useState(null);
+  const [loading, setLoading]   = useState(!isDemo);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [backendDown, setBackendDown] = useState(false);
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return; }
+    if (isDemo || !userId) {
+      setProfile(fallbackProfile);
+      setEditData(fallbackProfile);
+      setLoading(false);
+      return;
+    }
     fetch(`${API}/users/profile/${userId}`)
-      .then(res => { if (!res.ok) throw new Error('Failed to load profile'); return res.json(); })
+      .then(res => { if (!res.ok) throw new Error('server'); return res.json(); })
       .then(data => {
-        setProfile(data);
-        setEditData({ name: data.name, email: data.email, riskPreference: data.riskPreference || 'Medium', investmentGoal: data.investmentGoal || 'Wealth Creation' });
+        const p = { ...fallbackProfile, ...data };
+        setProfile(p);
+        setEditData({ name: p.name, email: p.email, riskPreference: p.riskPreference || 'Medium', investmentGoal: p.investmentGoal || 'Wealth Creation' });
       })
-      .catch(err => setError(err.message))
+      .catch(() => {
+        setBackendDown(true);
+        setProfile(fallbackProfile);
+        setEditData(fallbackProfile);
+      })
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, [userId, isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
     localStorage.setItem('userName', editData.name);
     localStorage.setItem('userEmail', editData.email);
-    const updated = { ...stored, name: editData.name, email: editData.email };
-    localStorage.setItem('investproUser', JSON.stringify(updated));
+    localStorage.setItem('investproUser', JSON.stringify({ ...stored, name: editData.name, email: editData.email }));
     setProfile(prev => ({ ...prev, ...editData }));
     setIsEditing(false);
-    alert('Profile updated successfully!');
   };
 
-  const roleLabel = (profile?.role || stored.role || '')?.toUpperCase() === 'ADMIN' ? 'Administrator' : 'Investor';
-  const roleIcon = roleLabel === 'Administrator' ? '🛡️' : '👤';
+  const roleLabel = (profile?.role || '')?.toUpperCase() === 'ADMIN' ? 'Administrator' : 'Investor';
+  const roleIcon  = roleLabel === 'Administrator' ? '🛡️' : '👤';
 
   if (loading) return <DashboardLayout><div className="page-loading">Loading profile...</div></DashboardLayout>;
-  if (error) return <DashboardLayout><div className="page-error">{error}</div></DashboardLayout>;
 
-  const displayName = profile?.name || stored.name || 'User';
-  const displayEmail = profile?.email || stored.email || '';
+  const displayName  = profile?.name  || 'User';
+  const displayEmail = profile?.email || '';
 
   return (
     <DashboardLayout>
       <div className="profile-page">
         <h1>My Profile</h1>
         <p className="page-subtitle">Manage your account information</p>
+
         <div className="profile-container">
           <div className="profile-card card">
             <div className="profile-header">
@@ -63,15 +81,15 @@ function Profile({ user }) {
             <div className="profile-details">
               <div className="detail-group">
                 <label>Full Name</label>
-                {isEditing ? (
-                  <input type="text" value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
-                ) : <p>{displayName}</p>}
+                {isEditing
+                  ? <input type="text" value={editData.name} onChange={e => setEditData({ ...editData, name: e.target.value })} />
+                  : <p>{displayName}</p>}
               </div>
               <div className="detail-group">
                 <label>Email</label>
-                {isEditing ? (
-                  <input type="email" value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} />
-                ) : <p>{displayEmail || 'Not provided'}</p>}
+                {isEditing
+                  ? <input type="email" value={editData.email} onChange={e => setEditData({ ...editData, email: e.target.value })} />
+                  : <p>{displayEmail || 'Not provided'}</p>}
               </div>
               <div className="detail-group">
                 <label>Role</label>
@@ -79,17 +97,17 @@ function Profile({ user }) {
               </div>
               <div className="detail-group">
                 <label>Risk Preference</label>
-                {isEditing ? (
-                  <select value={editData.riskPreference} onChange={(e) => setEditData({ ...editData, riskPreference: e.target.value })}>
-                    <option>Low</option><option>Medium</option><option>High</option>
-                  </select>
-                ) : <p>{editData.riskPreference}</p>}
+                {isEditing
+                  ? <select value={editData.riskPreference} onChange={e => setEditData({ ...editData, riskPreference: e.target.value })}>
+                      <option>Low</option><option>Medium</option><option>High</option>
+                    </select>
+                  : <p>{editData.riskPreference}</p>}
               </div>
               <div className="detail-group">
                 <label>Investment Goal</label>
-                {isEditing ? (
-                  <input type="text" value={editData.investmentGoal} onChange={(e) => setEditData({ ...editData, investmentGoal: e.target.value })} />
-                ) : <p>{editData.investmentGoal}</p>}
+                {isEditing
+                  ? <input type="text" value={editData.investmentGoal} onChange={e => setEditData({ ...editData, investmentGoal: e.target.value })} />
+                  : <p>{editData.investmentGoal}</p>}
               </div>
             </div>
             <div className="profile-actions">

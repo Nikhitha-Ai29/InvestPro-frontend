@@ -29,12 +29,13 @@ const monthlyInvestment = [
 const COLORS = ['#667eea', '#10b981', '#f59e0b'];
 
 function Dashboard({ user, setUser }) {
-  const displayName = user?.name || localStorage.getItem('userName') || 'User';
+  const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
+  const displayName = stored.name || user?.name || localStorage.getItem('userName') || 'Investor';
   return (
     <DashboardLayout user={user} setUser={setUser}>
       <div className="dashboard-content">
         <h1 className="welcome-title">Welcome back, {displayName}! 👋</h1>
-        <p className="welcome-subtitle">Here's your investment overview</p>
+        <p className="welcome-subtitle">Here's your investment overview.</p>
 
         <div className="stats-grid">
           <div className="stat-card">
