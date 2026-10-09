@@ -10,24 +10,23 @@ function Login({ setUser }) {
   const [error, setError]       = useState('');
 
   const isNetworkError = (msg = '') =>
-    ['fetch', 'network', 'failed to fetch', 'load failed'].some(k => msg.toLowerCase().includes(k));
+    ['fetch', 'network', 'failed to fetch', 'load failed', 'abort'].some(k =>
+      msg.toLowerCase().includes(k)
+    );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      // ── Try real backend first ──
       const data = await loginUser(formData.email, formData.password);
-      if (!data?.id) throw new Error('Invalid response from server.');
+      if (!data?.id) throw new Error('Something went wrong. Please try again.');
       saveSession(data);
       setUser({ id: data.id, name: data.name, email: data.email, role: data.role });
       navigate(data.role?.toUpperCase() === 'ADMIN' ? '/admin/dashboard' : '/dashboard');
-
     } catch (err) {
       if (isNetworkError(err.message)) {
-        // ── Backend unreachable — check local registry ──
+        // Backend unreachable — try local registry silently
         try {
           const user = localLogin(formData.email, formData.password);
           saveSession(user);
@@ -63,7 +62,6 @@ function Login({ setUser }) {
               required
             />
           </div>
-
           <div className="form-group">
             <label>Password</label>
             <input
@@ -74,12 +72,7 @@ function Login({ setUser }) {
               required
             />
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-full"
-            disabled={loading}
-          >
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>

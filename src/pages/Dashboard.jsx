@@ -1,36 +1,86 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
-import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
+import {
+  LineChart, Line, PieChart, Pie, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  Cell, ResponsiveContainer
+} from 'recharts';
 import '../styles/Dashboard.css';
 
-const portfolioData = [
-  { month: 'Jan', value: 50000 },
-  { month: 'Feb', value: 55000 },
-  { month: 'Mar', value: 58000 },
-  { month: 'Apr', value: 62000 },
-  { month: 'May', value: 68000 },
-  { month: 'Jun', value: 75000 }
-];
-
-const assetData = [
-  { name: 'Equity', value: 45 },
-  { name: 'Debt', value: 30 },
-  { name: 'Hybrid', value: 25 }
-];
-
-const monthlyInvestment = [
-  { month: 'Jan', amount: 10000 },
-  { month: 'Feb', amount: 12000 },
-  { month: 'Mar', amount: 11000 },
-  { month: 'Apr', amount: 15000 },
-  { month: 'May', amount: 13000 },
-  { month: 'Jun', amount: 14000 }
-];
-
-const COLORS = ['#667eea', '#10b981', '#f59e0b'];
+const API           = import.meta.env.VITE_API_URL || 'https://investpro-backend.onrender.com';
+const PORTFOLIO_KEY = (id) => `portfolio_${id}`;
+const COLORS        = ['#667eea', '#10b981', '#f59e0b'];
 
 function Dashboard({ user, setUser }) {
-  const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
-  const displayName = stored.name || user?.name || localStorage.getItem('userName') || 'Investor';
+  const stored      = JSON.parse(localStorage.getItem('investproUser') || '{}');
+  const displayName = stored.name || user?.name || 'Investor';
+  const userId      = stored.id;
+
+  const [investments, setInvestments] = useState([]);
+  const [loading, setLoading]         = useState(true);
+
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    const loadLocal = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PORTFOLIO_KEY(userId)) || '[]');
+        return Array.isArray(saved) ? saved : [];
+      } catch { return []; }
+    };
+
+    fetch(`${API}/investments/user/${userId}`)
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+      .then(data => {
+        const remote = Array.isArray(data) ? data : [];
+        setInvestments(remote.length ? remote : loadLocal());
+      })
+      .catch(() => setInvestments(loadLocal()))
+      .finally(() => setLoading(false));
+  }, [userId]); // eslint-disable-line
+
+  const totalInvested    = investments.reduce((s, i) => s + Number(i.investment || i.amount || 0), 0);
+  const totalReturns     = investments.reduce((s, i) => s + Number(i.returns || 0), 0);
+  const currentValue     = investments.reduce((s, i) => s + Number(i.maturityValue || 0), 0) || totalInvested + totalReturns;
+  const returnPercentage = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(1) : '0.0';
+
+  const fmt = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+  const portfolioData = [
+    { month: 'Jan', value: Math.round(currentValue * 0.70) },
+    { month: 'Feb', value: Math.round(currentValue * 0.75) },
+    { month: 'Mar', value: Math.round(currentValue * 0.80) },
+    { month: 'Apr', value: Math.round(currentValue * 0.85) },
+    { month: 'May', value: Math.round(currentValue * 0.92) },
+    { month: 'Jun', value: Math.round(currentValue) },
+  ];
+
+  const assetData = [
+    { name: 'Equity',  value: 45 },
+    { name: 'Debt',    value: 30 },
+    { name: 'Hybrid',  value: 25 },
+  ];
+
+  const monthlyInvestment = [
+    { month: 'Jan', amount: Math.round(totalInvested * 0.15) },
+    { month: 'Feb', amount: Math.round(totalInvested * 0.18) },
+    { month: 'Mar', amount: Math.round(totalInvested * 0.16) },
+    { month: 'Apr', amount: Math.round(totalInvested * 0.20) },
+    { month: 'May', amount: Math.round(totalInvested * 0.17) },
+    { month: 'Jun', amount: Math.round(totalInvested * 0.14) },
+  ];
+
+  if (loading) {
+    return (
+      <DashboardLayout user={user} setUser={setUser}>
+        <div className="page-loading">Loading your dashboard...</div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout user={user} setUser={setUser}>
       <div className="dashboard-content">
@@ -40,22 +90,22 @@ function Dashboard({ user, setUser }) {
         <div className="stats-grid">
           <div className="stat-card">
             <h3>Total Invested</h3>
-            <p className="stat-value">₹75,000</p>
-            <span className="stat-label">Current Value</span>
+            <p className="stat-value">{fmt(totalInvested)}</p>
+            <span className="stat-label">Amount Invested</span>
           </div>
           <div className="stat-card">
             <h3>Current Value</h3>
-            <p className="stat-value">₹86,250</p>
+            <p className="stat-value">{fmt(currentValue)}</p>
             <span className="stat-label">Portfolio Worth</span>
           </div>
           <div className="stat-card">
             <h3>Total Profit</h3>
-            <p className="stat-value profit">₹11,250</p>
+            <p className="stat-value profit">{fmt(totalReturns)}</p>
             <span className="stat-label">Gains</span>
           </div>
           <div className="stat-card">
             <h3>Return %</h3>
-            <p className="stat-value profit">+15.0%</p>
+            <p className="stat-value profit">+{returnPercentage}%</p>
             <span className="stat-label">Overall Return</span>
           </div>
         </div>
@@ -68,8 +118,8 @@ function Dashboard({ user, setUser }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="value" stroke="#667eea" strokeWidth={3} />
+                <Tooltip formatter={(v) => fmt(v)} />
+                <Line type="monotone" dataKey="value" stroke="#667eea" strokeWidth={3} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -79,8 +129,8 @@ function Dashboard({ user, setUser }) {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie data={assetData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
-                  {assetData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {assetData.map((_, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -96,8 +146,8 @@ function Dashboard({ user, setUser }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip />
-                <Bar dataKey="amount" fill="#667eea" />
+                <Tooltip formatter={(v) => fmt(v)} />
+                <Bar dataKey="amount" fill="#667eea" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

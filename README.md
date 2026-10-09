@@ -52,6 +52,34 @@ The application will be available at `http://localhost:5173`
 npm run build
 ```
 
+## Deployment on Railway
+
+### Backend Deployment
+1. In Railway, create a new project.
+2. Add a new service for the backend, pointing to the `InvestPro-Backend` folder.
+3. Railway will use the provided Dockerfile to build and deploy the Spring Boot app.
+4. Add environment variables:
+   - `DATABASE_URL`: The MySQL database URL from Railway's database plugin.
+   - `DB_USERNAME`: Database username.
+   - `DB_PASSWORD`: Database password.
+   - `PORT`: Will be set automatically by Railway.
+   - `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`: For email functionality (optional).
+
+### Frontend Deployment
+1. In the same Railway project, add another service for the frontend, pointing to the `InvestPro` folder.
+2. Railway will detect it as a Node.js app and run `npm run build` to create the production build.
+3. Add environment variable:
+   - `VITE_API_BASE_URL`: Set to the backend service's Railway URL (e.g., `https://investpro-backend.railway.app`).
+
+### Database Setup
+1. In Railway, add a MySQL database plugin.
+2. Connect it to the backend service.
+3. The backend will automatically create tables using JPA.
+
+### Connecting Frontend and Backend
+- The frontend will use the `VITE_API_BASE_URL` to make API calls to the backend.
+- CORS is configured globally in the backend to allow all origins for simplicity.
+
 ## Project Structure
 
 ```

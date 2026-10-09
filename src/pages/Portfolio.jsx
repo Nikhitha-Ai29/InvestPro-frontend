@@ -3,76 +3,65 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layout/DashboardLayout';
 import '../styles/Portfolio.css';
 
-const API         = import.meta.env.VITE_API_URL || 'https://investpro-backend.onrender.com';
-const PORTFOLIO_KEY = (userId) => `portfolio_${userId}`;
+const API           = import.meta.env.VITE_API_URL || 'https://investpro-backend.onrender.com';
+const PORTFOLIO_KEY = (id) => `portfolio_${id}`;
 
 function Portfolio() {
   const navigate = useNavigate();
   const stored   = JSON.parse(localStorage.getItem('investproUser') || '{}');
   const userId   = stored.id;
 
-  const [investments, setInvestments] = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState(null); // investment to confirm-delete
+  const [investments, setInvestments]   = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
 
-    // Try backend first
     fetch(`${API}/investments/user/${userId}`)
       .then(res => { if (!res.ok) throw new Error(); return res.json(); })
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setInvestments(data);
-        } else {
-          // Backend returned empty — load from localStorage
-          loadLocal();
-        }
+        const remote = Array.isArray(data) ? data : [];
+        const local  = loadLocal();
+        // Merge: remote wins on same id
+        const map = new Map(local.map(i => [String(i.id), i]));
+        remote.forEach(i => map.set(String(i.id), i));
+        const merged = [...map.values()];
+        setInvestments(merged);
+        saveLocal(merged);
       })
-      .catch(() => loadLocal())
+      .catch(() => setInvestments(loadLocal()))
       .finally(() => setLoading(false));
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]); // eslint-disable-line
 
   const loadLocal = () => {
-    const raw = localStorage.getItem(PORTFOLIO_KEY(userId));
-    setInvestments(raw ? JSON.parse(raw) : []);
+    try { return JSON.parse(localStorage.getItem(PORTFOLIO_KEY(userId)) || '[]'); }
+    catch { return []; }
   };
 
-  const saveLocal = (list) => {
+  const saveLocal = (list) =>
     localStorage.setItem(PORTFOLIO_KEY(userId), JSON.stringify(list));
-  };
-
-  const confirmDelete = (inv) => setDeleteTarget(inv);
-  const cancelDelete  = ()    => setDeleteTarget(null);
 
   const handleDelete = async () => {
     const inv = deleteTarget;
     setDeleteTarget(null);
-
-    // Try backend delete
     try {
-      const res = await fetch(`${API}/investments/${inv.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-    } catch {
-      // Backend unavailable — delete locally only
-    }
-
+      await fetch(`${API}/investments/delete/${inv.id}`, { method: 'DELETE' });
+    } catch { /* update locally regardless */ }
     const updated = investments.filter(i => i.id !== inv.id);
     setInvestments(updated);
     saveLocal(updated);
   };
 
-  const totalInvested = investments.reduce((s, i) => s + (i.investment || 0), 0);
-  const totalReturns  = investments.reduce((s, i) => s + (i.returns   || 0), 0);
-  const totalMaturity = investments.reduce((s, i) => s + (i.maturityValue || 0), 0);
-
-  const fmt = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+  const fmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+  const totalInvested = investments.reduce((s, i) => s + Number(i.investment || 0), 0);
+  const totalReturns  = investments.reduce((s, i) => s + Number(i.returns    || 0), 0);
+  const totalMaturity = investments.reduce((s, i) => s + Number(i.maturityValue || 0), 0);
 
   return (
     <DashboardLayout>
       <div className="portfolio-page">
 
-        {/* ── Header ── */}
         <div className="portfolio-header">
           <div>
             <h1>My Portfolio</h1>
@@ -83,7 +72,6 @@ function Portfolio() {
           </button>
         </div>
 
-        {/* ── Summary cards ── */}
         {investments.length > 0 && (
           <div className="portfolio-summary">
             <div className="summary-card">
@@ -105,7 +93,6 @@ function Portfolio() {
           </div>
         )}
 
-        {/* ── Investment list ── */}
         <div className="portfolio-list">
           <h2>Your Investments</h2>
 
@@ -115,7 +102,10 @@ function Portfolio() {
             <div className="empty-state">
               <div className="empty-icon">📂</div>
               <h3>No investments yet</h3>
-              <p>Explore mutual funds and click <strong>Invest Now</strong> to build your portfolio.</p>
+              <p>
+                Explore mutual funds and click <strong>Invest Now</strong> to start
+                building your portfolio.
+              </p>
               <button className="btn btn-primary" onClick={() => navigate('/explore')}>
                 Explore Funds
               </button>
@@ -125,12 +115,9 @@ function Portfolio() {
           {!loading && investments.length > 0 && (
             <div className="investments-grid">
               {investments.map((inv, index) => {
-                const type    = (inv.type || inv.investmentType || '').toUpperCase();
-                const isSIP   = type === 'SIP';
+                const isSIP = (inv.type || '').toUpperCase() === 'SIP';
                 return (
                   <div key={inv.id || index} className="investment-card card">
-
-                    {/* Card header */}
                     <div className="inv-card-header">
                       <div className="inv-fund-info">
                         <div className="inv-avatar">
@@ -145,26 +132,25 @@ function Portfolio() {
                       </div>
                       <button
                         className="inv-delete-btn"
-                        onClick={() => confirmDelete(inv)}
+                        onClick={() => setDeleteTarget(inv)}
                         title="Remove investment"
                       >
                         🗑️
                       </button>
                     </div>
 
-                    {/* Details */}
                     <div className="investment-details">
                       <div className="detail-row">
                         <span>Amount Invested</span>
-                        <span>{fmt(inv.investment || 0)}</span>
+                        <span>{fmt(inv.investment)}</span>
                       </div>
                       <div className="detail-row">
                         <span>Expected Returns</span>
-                        <span className="returns">{fmt(inv.returns || 0)}</span>
+                        <span className="returns">{fmt(inv.returns)}</span>
                       </div>
                       <div className="detail-row">
                         <span>Maturity Value</span>
-                        <span className="maturity">{fmt(inv.maturityValue || 0)}</span>
+                        <span className="maturity">{fmt(inv.maturityValue)}</span>
                       </div>
                       {isSIP && inv.duration && (
                         <div className="detail-row">
@@ -174,13 +160,13 @@ function Portfolio() {
                       )}
                       <div className="detail-row">
                         <span>Date</span>
-                        <span>{inv.date || '-'}</span>
+                        <span>{inv.date || inv.createdAt || '-'}</span>
                       </div>
                     </div>
 
                     <button
                       className="btn btn-secondary btn-invest-more"
-                      onClick={() => navigate(`/invest/${encodeURIComponent(inv.fundName)}`)}
+                      onClick={() => navigate(`/invest/${encodeURIComponent(inv.fundName || '')}`)}
                     >
                       Invest More
                     </button>
@@ -192,24 +178,18 @@ function Portfolio() {
         </div>
       </div>
 
-      {/* ── Delete confirmation modal ── */}
       {deleteTarget && (
-        <div className="modal-overlay" onClick={cancelDelete}>
+        <div className="modal-overlay" onClick={() => setDeleteTarget(null)}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
             <div className="modal-icon">🗑️</div>
             <h3>Remove Investment?</h3>
             <p>
               Are you sure you want to remove your investment in{' '}
-              <strong>{deleteTarget.fundName}</strong>?
-              This action cannot be undone.
+              <strong>{deleteTarget.fundName}</strong>? This cannot be undone.
             </p>
             <div className="modal-actions">
-              <button className="btn btn-danger" onClick={handleDelete}>
-                Yes, Remove
-              </button>
-              <button className="btn btn-secondary" onClick={cancelDelete}>
-                Cancel
-              </button>
+              <button className="btn btn-danger" onClick={handleDelete}>Yes, Remove</button>
+              <button className="btn btn-secondary" onClick={() => setDeleteTarget(null)}>Cancel</button>
             </div>
           </div>
         </div>

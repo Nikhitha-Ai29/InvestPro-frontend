@@ -15,7 +15,9 @@ function Register({ setUser }) {
     setFormData(prev => ({ ...prev, [field]: value }));
 
   const isNetworkError = (msg = '') =>
-    ['fetch', 'network', 'failed to fetch', 'load failed'].some(k => msg.toLowerCase().includes(k));
+    ['fetch', 'network', 'failed to fetch', 'load failed', 'abort'].some(k =>
+      msg.toLowerCase().includes(k)
+    );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,16 +35,15 @@ function Register({ setUser }) {
 
     setLoading(true);
     try {
-      // ── Try real backend first ──
+      // Try real backend
       const data = await registerUser(
         formData.name.trim(), formData.email, formData.password, formData.role
       );
-      try { await sendOtp(formData.email); } catch (_) { /* ignore */ }
-      navigate('/verify-otp', { state: { email: formData.email, pendingUser: data } });
-
+      try { await sendOtp(formData.email); } catch (_) { /* sent automatically */ }
+      navigate('/verify-otp', { state: { email: formData.email, pendingUser: data?.data || data } });
     } catch (err) {
       if (isNetworkError(err.message)) {
-        // ── Backend unreachable — use local registry ──
+        // Backend unreachable — register locally
         try {
           const user = localRegister(
             formData.name.trim(), formData.email, formData.password, formData.role
@@ -54,7 +55,6 @@ function Register({ setUser }) {
           setError(localErr.message);
         }
       } else {
-        // Backend returned a real error (e.g. duplicate email from server)
         setError(err.message || 'Registration failed. Please try again.');
       }
     } finally {
@@ -81,7 +81,6 @@ function Register({ setUser }) {
               required
             />
           </div>
-
           <div className="form-group">
             <label>Email Address</label>
             <input
@@ -92,7 +91,6 @@ function Register({ setUser }) {
               required
             />
           </div>
-
           <div className="form-group">
             <label>Password</label>
             <input
@@ -103,7 +101,6 @@ function Register({ setUser }) {
               required
             />
           </div>
-
           <div className="form-group">
             <label>Confirm Password</label>
             <input
@@ -114,38 +111,24 @@ function Register({ setUser }) {
               required
             />
           </div>
-
           <div className="form-group">
             <label>Account Type</label>
             <div className="role-selection">
               <label className="radio-label">
-                <input
-                  type="radio"
-                  name="role"
-                  value="USER"
+                <input type="radio" name="role" value="USER"
                   checked={formData.role === 'USER'}
-                  onChange={e => handleChange('role', e.target.value)}
-                />
+                  onChange={e => handleChange('role', e.target.value)} />
                 <span>Investor</span>
               </label>
               <label className="radio-label">
-                <input
-                  type="radio"
-                  name="role"
-                  value="ADMIN"
+                <input type="radio" name="role" value="ADMIN"
                   checked={formData.role === 'ADMIN'}
-                  onChange={e => handleChange('role', e.target.value)}
-                />
+                  onChange={e => handleChange('role', e.target.value)} />
                 <span>Admin</span>
               </label>
             </div>
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-full"
-            disabled={loading}
-          >
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>

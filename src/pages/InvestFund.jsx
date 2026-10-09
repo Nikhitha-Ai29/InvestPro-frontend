@@ -4,11 +4,12 @@ import DashboardLayout from '../layout/DashboardLayout';
 import '../styles/InvestFund.css';
 
 const API           = import.meta.env.VITE_API_URL || 'https://investpro-backend.onrender.com';
-const PORTFOLIO_KEY = (userId) => `portfolio_${userId}`;
+const PORTFOLIO_KEY = (id) => `portfolio_${id}`;
 
 function InvestFund() {
   const { fundName } = useParams();
   const navigate     = useNavigate();
+  const decodedName  = decodeURIComponent(fundName);
 
   const [investmentType, setInvestmentType] = useState('oneTime');
   const [amount, setAmount]               = useState('');
@@ -18,62 +19,59 @@ function InvestFund() {
   const [error, setError]                 = useState('');
   const [success, setSuccess]             = useState('');
 
-  const decodedName = decodeURIComponent(fundName);
-
-  const calculateReturns = () => {
+  const calcReturns = () => {
     const rate = 0.12;
     if (investmentType === 'oneTime') {
-      const principal = parseFloat(amount) || 0;
-      const maturity  = principal * Math.pow(1 + rate, 3);
-      return { investment: principal, returns: maturity - principal, maturity };
+      const p = parseFloat(amount) || 0;
+      const m = p * Math.pow(1 + rate, 3);
+      return { investment: p, returns: m - p, maturity: m };
     }
-    const monthly     = parseFloat(monthlyAmount) || 0;
-    const years       = parseFloat(duration) || 0;
-    const months      = years * 12;
-    const monthlyRate = rate / 12;
-    const maturity    = months > 0
-      ? monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate)
-      : 0;
-    return { investment: monthly * months, returns: maturity - monthly * months, maturity };
+    const monthly = parseFloat(monthlyAmount) || 0;
+    const years   = parseFloat(duration) || 0;
+    const months  = years * 12;
+    const mr      = rate / 12;
+    const m       = months > 0 ? monthly * ((Math.pow(1 + mr, months) - 1) / mr) * (1 + mr) : 0;
+    return { investment: monthly * months, returns: m - monthly * months, maturity: m };
   };
 
-  const handleAddToPortfolio = async () => {
-    const calc   = calculateReturns();
+  const saveToLocal = (userId, entry) => {
+    const key = PORTFOLIO_KEY(userId);
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch { list = []; }
+    localStorage.setItem(key, JSON.stringify([...list, entry]));
+  };
+
+  const handleAdd = async () => {
+    const calc   = calcReturns();
     const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
     const userId = stored.id;
 
-    if (!userId) { setError('Session expired. Please login again.'); return; }
+    if (!userId) { setError('Session expired. Please sign in again.'); return; }
 
-    // Validate inputs
-    if (investmentType === 'oneTime' && (!amount || parseFloat(amount) <= 0)) {
+    if (investmentType === 'oneTime' && parseFloat(amount) <= 0) {
       setError('Please enter a valid investment amount.'); return;
     }
     if (investmentType === 'sip') {
-      if (!monthlyAmount || parseFloat(monthlyAmount) <= 0) {
-        setError('Please enter a valid monthly amount.'); return;
-      }
-      if (!duration || parseFloat(duration) <= 0) {
-        setError('Please enter a valid duration.'); return;
-      }
+      if (parseFloat(monthlyAmount) <= 0) { setError('Please enter a valid monthly amount.'); return; }
+      if (parseFloat(duration) <= 0)      { setError('Please enter a valid duration.'); return; }
     }
 
     const payload = {
-      id:           Date.now(),
+      id:            Date.now(),
       userId,
-      fundName:     decodedName,
-      type:         investmentType === 'oneTime' ? 'ONE_TIME' : 'SIP',
-      amount:       parseFloat(investmentType === 'oneTime' ? amount : monthlyAmount) || 0,
-      duration:     investmentType === 'sip' ? parseFloat(duration) || 0 : null,
-      investment:   calc.investment,
-      returns:      calc.returns,
+      fundName:      decodedName,
+      type:          investmentType === 'oneTime' ? 'ONE_TIME' : 'SIP',
+      amount:        parseFloat(investmentType === 'oneTime' ? amount : monthlyAmount) || 0,
+      duration:      investmentType === 'sip' ? parseFloat(duration) || 0 : null,
+      investment:    calc.investment,
+      returns:       calc.returns,
       maturityValue: calc.maturity,
-      date:         new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      date:          new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     };
 
     setLoading(true);
     setError('');
 
-    // Try backend
     try {
       const res = await fetch(`${API}/investments/add`, {
         method:  'POST',
@@ -84,25 +82,20 @@ function InvestFund() {
       const saved = await res.json().catch(() => payload);
       saveToLocal(userId, { ...payload, id: saved.id || payload.id });
     } catch {
-      // Backend unavailable — save locally
       saveToLocal(userId, payload);
     }
 
     setSuccess(`✅ Investment in ${decodedName} added to your portfolio!`);
-    setTimeout(() => navigate('/portfolio'), 1600);
+    setTimeout(() => navigate('/portfolio'), 1500);
     setLoading(false);
   };
 
-  const saveToLocal = (userId, entry) => {
-    const key      = PORTFOLIO_KEY(userId);
-    const existing = JSON.parse(localStorage.getItem(key) || '[]');
-    localStorage.setItem(key, JSON.stringify([...existing, entry]));
-  };
-
-  const calc = calculateReturns();
+  const calc      = calcReturns();
   const hasAmount = investmentType === 'oneTime'
     ? parseFloat(amount) > 0
     : parseFloat(monthlyAmount) > 0 && parseFloat(duration) > 0;
+
+  const fmt = (n) => n.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
   return (
     <DashboardLayout>
@@ -115,8 +108,6 @@ function InvestFund() {
 
         <div className="invest-container">
           <div className="invest-form card">
-
-            {/* Type toggle */}
             <div className="investment-type">
               <button
                 className={`type-btn ${investmentType === 'oneTime' ? 'active' : ''}`}
@@ -135,61 +126,38 @@ function InvestFund() {
             {investmentType === 'oneTime' ? (
               <div className="form-group">
                 <label>Investment Amount (₹)</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 25000"
-                  min="1"
-                  value={amount}
-                  onChange={e => { setAmount(e.target.value); setError(''); }}
-                />
+                <input type="number" placeholder="e.g. 25000" min="1"
+                  value={amount} onChange={e => { setAmount(e.target.value); setError(''); }} />
               </div>
             ) : (
               <>
                 <div className="form-group">
                   <label>Monthly SIP Amount (₹)</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 5000"
-                    min="1"
-                    value={monthlyAmount}
-                    onChange={e => { setMonthlyAmount(e.target.value); setError(''); }}
-                  />
+                  <input type="number" placeholder="e.g. 5000" min="1"
+                    value={monthlyAmount} onChange={e => { setMonthlyAmount(e.target.value); setError(''); }} />
                 </div>
                 <div className="form-group">
                   <label>Investment Duration (Years)</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 5"
-                    min="1"
-                    max="30"
-                    value={duration}
-                    onChange={e => { setDuration(e.target.value); setError(''); }}
-                  />
+                  <input type="number" placeholder="e.g. 5" min="1" max="30"
+                    value={duration} onChange={e => { setDuration(e.target.value); setError(''); }} />
                 </div>
               </>
             )}
 
-            {/* Live summary — only show when values are entered */}
             {hasAmount && (
               <div className="calculation-summary">
                 <h3>Investment Summary</h3>
                 <div className="summary-item">
                   <span>Total Investment</span>
-                  <span className="summary-value">
-                    ₹{calc.investment.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </span>
+                  <span className="summary-value">₹{fmt(calc.investment)}</span>
                 </div>
                 <div className="summary-item">
                   <span>Estimated Returns (12% p.a.)</span>
-                  <span className="summary-value returns">
-                    ₹{calc.returns.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </span>
+                  <span className="summary-value returns">₹{fmt(calc.returns)}</span>
                 </div>
                 <div className="summary-item">
                   <span>Estimated Maturity Value</span>
-                  <span className="summary-value maturity">
-                    ₹{calc.maturity.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </span>
+                  <span className="summary-value maturity">₹{fmt(calc.maturity)}</span>
                 </div>
               </div>
             )}
@@ -199,18 +167,12 @@ function InvestFund() {
               {success && <p className="page-success">{success}</p>}
               {!success && (
                 <>
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleAddToPortfolio}
-                    disabled={loading || !hasAmount}
-                  >
+                  <button className="btn btn-primary" onClick={handleAdd}
+                    disabled={loading || !hasAmount}>
                     {loading ? 'Adding to Portfolio...' : 'Add to Portfolio'}
                   </button>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => navigate('/explore')}
-                    disabled={loading}
-                  >
+                  <button className="btn btn-secondary" onClick={() => navigate('/explore')}
+                    disabled={loading}>
                     Cancel
                   </button>
                 </>

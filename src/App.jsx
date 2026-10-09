@@ -4,13 +4,13 @@ import SplashScreen from './pages/SplashScreen';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyOTP from './pages/VerifyOTP';
 import Dashboard from './pages/Dashboard';
 import ExploreFunds from './pages/ExploreFunds';
 import InvestFund from './pages/InvestFund';
 import Portfolio from './pages/Portfolio';
 import SIPCalculator from './pages/SIPCalculator';
 import Profile from './pages/Profile';
-import VerifyOTP from './pages/VerifyOTP';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageFunds from './pages/admin/ManageFunds';
@@ -54,7 +54,7 @@ function App() {
         <Route path="/invest/:fundName" element={<ProtectedRoute allowedRole="user"><InvestFund /></ProtectedRoute>} />
         <Route path="/portfolio" element={<ProtectedRoute allowedRole="user"><Portfolio /></ProtectedRoute>} />
         <Route path="/sip-calculator" element={<ProtectedRoute allowedRole="user"><SIPCalculator /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute allowedRole="user"><Profile user={user} /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute allowedRole="user"><Profile user={user} setUser={setUser} /></ProtectedRoute>} />
         
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRole="admin"><AdminDashboard setUser={setUser} /></ProtectedRoute>} />

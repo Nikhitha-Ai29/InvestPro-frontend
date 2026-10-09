@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getResponse } from './chatbotData';
 import '../styles/ChatSupport.css';
 
-const API = 'http://localhost:8081';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const QUICK_PROMPTS = ['What is SIP?', 'Best fund for beginners', 'Low risk funds', 'Expected returns'];
 
 function ChatSupport() {

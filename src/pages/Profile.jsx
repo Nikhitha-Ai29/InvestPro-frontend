@@ -1,69 +1,61 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
-import { isDemoSession } from '../services/authService';
 import '../styles/Profile.css';
 
 const API = import.meta.env.VITE_API_URL || 'https://investpro-backend.onrender.com';
 
-function Profile({ user }) {
+function Profile({ user, setUser }) {
   const stored = JSON.parse(localStorage.getItem('investproUser') || '{}');
   const userId = stored.id || user?.id;
-  const isDemo = isDemoSession();
 
-  const fallbackProfile = {
-    name:             stored.name  || user?.name  || 'User',
-    email:            stored.email || user?.email || '',
-    role:             stored.role  || user?.role  || 'USER',
-    riskPreference:   'Medium',
-    investmentGoal:   'Wealth Creation',
+  const fallback = {
+    name:           stored.name  || user?.name  || 'User',
+    email:          stored.email || user?.email || '',
+    role:           stored.role  || user?.role  || 'USER',
+    riskPreference: 'Medium',
+    investmentGoal: 'Wealth Creation',
+    ...(() => { try { return JSON.parse(localStorage.getItem(`profile_${userId}`) || '{}'); } catch { return {}; } })(),
   };
 
-  const [profile, setProfile]   = useState(null);
-  const [loading, setLoading]   = useState(!isDemo);
+  const [profile, setProfile]     = useState(null);
+  const [loading, setLoading]     = useState(Boolean(userId));
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({});
-  const [backendDown, setBackendDown] = useState(false);
+  const [editData, setEditData]   = useState({});
 
   useEffect(() => {
-    if (isDemo || !userId) {
-      setProfile(fallbackProfile);
-      setEditData(fallbackProfile);
-      setLoading(false);
-      return;
-    }
+    if (!userId) { setProfile(fallback); setEditData(fallback); setLoading(false); return; }
     fetch(`${API}/users/profile/${userId}`)
-      .then(res => { if (!res.ok) throw new Error('server'); return res.json(); })
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
       .then(data => {
-        const p = { ...fallbackProfile, ...data };
+        const p = { ...fallback, ...data };
         setProfile(p);
         setEditData({ name: p.name, email: p.email, riskPreference: p.riskPreference || 'Medium', investmentGoal: p.investmentGoal || 'Wealth Creation' });
       })
-      .catch(() => {
-        setBackendDown(true);
-        setProfile(fallbackProfile);
-        setEditData(fallbackProfile);
-      })
+      .catch(() => { setProfile(fallback); setEditData(fallback); })
       .finally(() => setLoading(false));
-  }, [userId, isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]); // eslint-disable-line
 
   const handleSave = () => {
-    localStorage.setItem('userName', editData.name);
+    const updated = { ...stored, name: editData.name, email: editData.email };
+    localStorage.setItem('investproUser', JSON.stringify(updated));
+    localStorage.setItem('userName',  editData.name);
     localStorage.setItem('userEmail', editData.email);
-    localStorage.setItem('investproUser', JSON.stringify({ ...stored, name: editData.name, email: editData.email }));
+    localStorage.setItem(`profile_${userId}`, JSON.stringify({ ...profile, ...editData }));
     setProfile(prev => ({ ...prev, ...editData }));
+    if (setUser) setUser(prev => prev ? { ...prev, name: editData.name, email: editData.email } : prev);
     setIsEditing(false);
   };
 
-  const roleLabel = (profile?.role || '')?.toUpperCase() === 'ADMIN' ? 'Administrator' : 'Investor';
+  const roleLabel = (profile?.role || '').toUpperCase() === 'ADMIN' ? 'Administrator' : 'Investor';
   const roleIcon  = roleLabel === 'Administrator' ? '🛡️' : '👤';
 
-  if (loading) return <DashboardLayout><div className="page-loading">Loading profile...</div></DashboardLayout>;
+  if (loading) return <DashboardLayout setUser={setUser}><div className="page-loading">Loading profile...</div></DashboardLayout>;
 
   const displayName  = profile?.name  || 'User';
   const displayEmail = profile?.email || '';
 
   return (
-    <DashboardLayout>
+    <DashboardLayout setUser={setUser}>
       <div className="profile-page">
         <h1>My Profile</h1>
         <p className="page-subtitle">Manage your account information</p>
@@ -78,6 +70,7 @@ function Profile({ user }) {
                 <span className="role-tag">{roleIcon} {roleLabel}</span>
               </div>
             </div>
+
             <div className="profile-details">
               <div className="detail-group">
                 <label>Full Name</label>
@@ -92,7 +85,7 @@ function Profile({ user }) {
                   : <p>{displayEmail || 'Not provided'}</p>}
               </div>
               <div className="detail-group">
-                <label>Role</label>
+                <label>Account Type</label>
                 <p className="role-value">{roleLabel}</p>
               </div>
               <div className="detail-group">
@@ -110,6 +103,7 @@ function Profile({ user }) {
                   : <p>{editData.investmentGoal}</p>}
               </div>
             </div>
+
             <div className="profile-actions">
               {isEditing ? (
                 <>
